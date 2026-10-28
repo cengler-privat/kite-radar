@@ -61,7 +61,6 @@
             <button class="settings-btn" id="btnSettings" onclick="toggleSettings()">⚙️ Settings</button>
         </div>
 
-        <!-- Settings Panel (Modelle & Gewicht) -->
         <div class="settings-panel" id="settingsPanel">
             <div class="control-group">
                 <label>Wettermodell wählen</label>
@@ -85,10 +84,10 @@
         </div>
     </header>
 
-    <!-- Großer Chart jetzt OBERAN -->
+    <!-- Großer Chart obenan -->
     <div class="card" id="chartCard">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <label style="font-size: 0.85rem; color: var(--primary);">Wind & Gezeiten Verlauf</label>
+            <label style="font-size: 0.85rem; color: var(--primary);">Wind & Gezeiten Verlauf (Marsa Alam)</label>
             <select id="chartDaySelect" onchange="updateChart()" style="width: auto; padding: 4px 8px; font-size: 0.8rem;"></select>
         </div>
         <div class="chart-container">
@@ -96,7 +95,6 @@
         </div>
     </div>
 
-    <!-- Wind Cards / Tagesübersicht darunter -->
     <div id="mainContainer"></div>
 
 <script>
@@ -116,8 +114,14 @@
         hours.forEach((h, idx) => {
             let baseWind = 11 + Math.sin(i + h) * 4 + (h === 13 ? 3 : 0);
             let gusts = baseWind + 4;
-            let tideHeight = 0.4 + Math.sin(i * 2 + idx * 0.5) * 0.3;
-            let tideTrend = tideHeight > 0.4 ? "↑ Flut" : "↓ Ebbe";
+            
+            // Realistischeres Rotmeer-Tidenmodell (Tidenhub ~0.6m, max ca. 0.78m)
+            // Schematischer Verlauf: Morgens Flut (~0.7m), mittags fallend/Ebbe (~0.2m), abends wieder steigend
+            let tideHeight = 0.45 + 0.3 * Math.cos((h - 9) * Math.PI / 6 + i);
+            tideHeight = Math.max(0.12, Math.min(0.78, tideHeight)); // Begrenzung auf echte Marsa-Alam-Werte
+            
+            // Trend bestimmen basierend auf der Stunde
+            let tideTrend = (h < 13) ? "↓ Ebbe" : "↑ Flut";
             
             slots.push({
                 hour: `${h}:00`,
@@ -208,7 +212,6 @@
     function scrollToChart(dIdx) {
         selectedDayIndex = dIdx;
         updateChart();
-        // Sanft nach oben zum Chart springen
         document.getElementById('chartCard').scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -222,7 +225,8 @@
         const labels = day.slots.map(s => s.hour);
         const windData = day.slots.map(s => s[modelKey].wind);
         const gustData = day.slots.map(s => s[modelKey].gusts);
-        const tideData = day.slots.map(s => parseFloat(s.tide) * 20);
+        // Korrekte Skalierung für den Chart (Meter * 25, damit es optisch zur Windachse passt)
+        const tideData = day.slots.map(s => parseFloat(s.tide) * 25);
 
         const ctx = document.getElementById('weatherChart').getContext('2d');
         if (myChart) myChart.destroy();
@@ -250,7 +254,7 @@
                         yAxisID: 'y'
                     },
                     {
-                        label: 'Gezeiten (cm)',
+                        label: 'Wasserstand (cm)',
                         data: tideData,
                         borderColor: '#34d399',
                         tension: 0.3,
@@ -289,9 +293,12 @@
                         position: 'right',
                         title: { display: true, text: 'Wasserstand (cm)', color: '#94a3b8' },
                         min: 0,
-                        max: 20,
+                        max: 25, // Entspricht 1,00m max Tidenhöhe im Roten Meer
                         grid: { drawOnChartArea: false },
-                        ticks: { color: '#94a3b8' }
+                        ticks: { 
+                            color: '#94a3b8',
+                            callback: function(value) { return (value / 25).toFixed(2) + 'm'; }
+                        }
                     },
                     x: {
                         grid: { color: '#334155' },
