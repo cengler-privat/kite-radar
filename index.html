@@ -4,37 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Royal Tulip Kite Beach - Wind & Tiden</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #0284c7; --success: #10b981; --success-light: #d1fae5; --bg: #f8fafc; --card-bg: #ffffff; --text: #0f172a; --text-muted: #64748b; --border: #e2e8f0; }
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --primary: #38bdf8;
+            --success-bg: #064e3b;
+            --success-border: #059669;
+            --normal-bg: #1e293b;
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
         body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 900px; margin: 0 auto; }
         header { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; background: var(--card-bg); padding: 16px; border-radius: 12px; border: 1px solid var(--border); }
         .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        h1 { font-size: 1.25rem; }
+        h1 { font-size: 1.25rem; color: var(--text); }
         .mode-toggles { display: flex; background: var(--bg); padding: 4px; border-radius: 8px; border: 1px solid var(--border); gap: 4px; }
         .mode-btn { background: transparent; border: none; padding: 6px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border-radius: 6px; color: var(--text-muted); }
-        .mode-btn.active { background: var(--primary); color: white; }
+        .mode-btn.active { background: var(--primary); color: #0f172a; }
         .controls-grid { display: flex; flex-direction: column; gap: 4px; padding-top: 8px; border-top: 1px solid var(--border); }
         label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
         .weight-input-wrapper { display: flex; align-items: center; gap: 8px; }
         input[type="range"] { flex: 1; accent-color: var(--primary); }
-        .weight-number { width: 55px; padding: 4px; font-size: 0.9rem; font-weight: bold; text-align: center; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
-        .poweruser-panel { display: none; background: #f1f5f9; padding: 12px; border-radius: 8px; margin-top: 8px; border: 1px solid var(--border); }
+        .weight-number { width: 55px; padding: 4px; font-size: 0.9rem; font-weight: bold; text-align: center; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); }
+        .poweruser-panel { display: none; background: #0f172a; padding: 12px; border-radius: 8px; margin-top: 8px; border: 1px solid var(--border); }
         .poweruser-panel.visible { display: block; }
-        select { padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: white; font-size: 0.9rem; width: 100%; }
+        select { padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); font-size: 0.9rem; width: 100%; }
         .meta-info { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
         .card { background: var(--card-bg); border-radius: 12px; padding: 16px; border: 1px solid var(--border); margin-bottom: 16px; }
         .day-section { margin-bottom: 16px; }
         .day-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 8px; color: var(--primary); display: flex; justify-content: space-between; }
         .slots-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-        .slot-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px; text-align: center; }
-        .slot-card.rideable { background: var(--success-light); border-color: #6ee7b7; }
+        .slot-card { background: var(--normal-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; transition: all 0.2s; }
+        .slot-card.rideable { background: var(--success-bg); border-color: var(--success-border); }
         .slot-time { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
-        .slot-wind { font-size: 1rem; font-weight: 800; margin-bottom: 2px; }
-        .slot-tide { font-size: 0.75rem; color: var(--text-muted); }
-        .slot-badge { font-size: 0.65rem; font-weight: 700; margin-top: 4px; padding: 2px 4px; border-radius: 4px; display: inline-block; }
-        .slot-card.rideable .slot-badge { background: var(--success); color: white; }
-        .slot-card:not(.rideable) .slot-badge { background: #e2e8f0; color: var(--text-muted); }
+        .slot-wind { font-size: 1.1rem; font-weight: 800; margin-bottom: 2px; }
+        .slot-tide { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+        .chart-container { position: relative; height: 240px; width: 100%; }
         @media (max-width: 600px) { .slots-grid { grid-template-columns: repeat(2, 1fr); } }
     </style>
 </head>
@@ -51,8 +60,8 @@
         <div class="controls-grid">
             <label>Kiter-Gewicht (mit Neo)</label>
             <div class="weight-input-wrapper">
-                <input type="range" id="weightRange" min="50" max="110" value="75" oninput="updateWeight(this.value)">
-                <input type="number" id="weightNumber" class="weight-number" min="40" max="130" value="75" oninput="updateWeight(this.value)">
+                <input type="range" id="weightRange" min="50" max="110" value="72" oninput="updateWeight(this.value)">
+                <input type="number" id="weightNumber" class="weight-number" min="40" max="130" value="72" oninput="updateWeight(this.value)">
                 <span style="font-size: 0.85rem; font-weight: 600;">kg</span>
             </div>
         </div>
@@ -64,15 +73,28 @@
                 <option value="icon">ICON (DWD)</option>
                 <option value="gfs">GFS 13km (NOAA)</option>
             </select>
-            <div class="meta-info" id="modelMeta">Lauf: 06Z | Update: vor 1.5h</div>
+            <div class="meta-info" id="modelMeta">Lauf: 06Z | WRF 9km aktiv</div>
         </div>
     </header>
 
     <div id="mainContainer"></div>
 
+    <!-- Großer Chart ganz unten -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <label style="font-size: 0.85rem; color: var(--primary);">Wind & Gezeiten Verlauf</label>
+            <select id="chartDaySelect" onchange="updateChart()" style="width: auto; padding: 4px 8px; font-size: 0.8rem;"></select>
+        </div>
+        <div class="chart-container">
+            <canvas id="weatherChart"></canvas>
+        </div>
+    </div>
+
 <script>
     let currentMode = 'standard';
-    let userWeight = 75;
+    let userWeight = 72;
+    let selectedDayIndex = 0;
+    let myChart = null;
     
     const daysData = [];
     const today = new Date();
@@ -136,17 +158,32 @@
         const minWindNeeded = getMinWindFor14m();
         
         const metas = {
-            wrf9: "Lauf: 06Z | WRF 9km aktiv (Thermik-Korrektur)",
-            ecmwf: "Lauf: 00Z | ECMWF 9km Globalmodell",
+            wrf9: "Lauf: 06Z | WRF 9km aktiv (Thermik)",
+            ecmwf: "Lauf: 00Z | ECMWF 9km Global",
             icon: "Lauf: 06Z | ICON DWD Modell",
-            gfs: "Lauf: 00Z | GFS 13km NOAA Modell"
+            gfs: "Lauf: 00Z | GFS 13km NOAA"
         };
         document.getElementById('modelMeta').innerText = metas[modelKey];
 
+        // Chart Tagesauswahl aktualisieren
+        const chartSelect = document.getElementById('chartDaySelect');
+        const prevSelected = chartSelect.value;
+        chartSelect.innerHTML = '';
+        daysData.forEach((day, idx) => {
+            let opt = document.createElement('option');
+            opt.value = idx;
+            opt.innerText = day.dateStr;
+            if (idx === selectedDayIndex) opt.selected = true;
+            chartSelect.appendChild(opt);
+        });
+
         let html = '';
-        daysData.forEach((day) => {
+        daysData.forEach((day, dIdx) => {
             html += `<div class="card day-section">
-                <div class="day-title"><span>📅 ${day.dateStr}</span></div>
+                <div class="day-title">
+                    <span>📅 ${day.dateStr}</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted); cursor:pointer;" onclick="selectedDayIndex=${dIdx}; updateChart();">Im Chart anzeigen 📊</span>
+                </div>
                 <div class="slots-grid">`;
             
             day.slots.forEach(slot => {
@@ -154,15 +191,105 @@
                 let isRideable = wData.wind >= minWindNeeded;
                 html += `<div class="slot-card ${isRideable ? 'rideable' : ''}">
                     <div class="slot-time">${slot.hour}</div>
-                    <div class="slot-wind">${wData.wind} <span style="font-size:0.7rem;">kn</span></div>
-                    <div style="font-size:0.7rem; color:var(--text-muted)">Böen ${wData.gusts}</div>
+                    <div class="slot-wind">${wData.wind} <span style="font-size:0.7rem; font-weight:normal;">kn</span></div>
+                    <div style="font-size:0.7rem; color:var(--text-muted);">Böen ${wData.gusts}</div>
                     <div class="slot-tide">${slot.tide} ${slot.tideTrend}</div>
-                    <div class="slot-badge">${isRideable ? '✅ Fährt (≤14m²)' : '❌ Zu wenig'}</div>
                 </div>`;
             });
             html += `</div></div>`;
         });
         container.innerHTML = html;
+        updateChart();
+    }
+
+    function updateChart() {
+        const chartDayIdx = document.getElementById('chartDaySelect').value;
+        selectedDayIndex = Number(chartDayIdx);
+        const day = daysData[selectedDayIndex];
+        const modelKey = getActiveModelKey();
+        const minWindNeeded = getMinWindFor14m();
+
+        const labels = day.slots.map(s => s.hour);
+        const windData = day.slots.map(s => s[modelKey].wind);
+        const gustData = day.slots.map(s => s[modelKey].gusts);
+        const tideData = day.slots.map(s => parseFloat(s.tide) * 20);
+
+        const ctx = document.getElementById('weatherChart').getContext('2d');
+        if (myChart) myChart.destroy();
+
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Grundwind (kn)',
+                        data: windData,
+                        borderColor: '#38bdf8',
+                        backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Böen (kn)',
+                        data: gustData,
+                        borderColor: '#94a3b8',
+                        borderDash: [4, 4],
+                        tension: 0.3,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Gezeiten (cm)',
+                        data: tideData,
+                        borderColor: '#34d399',
+                        tension: 0.3,
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: '14m² Limit',
+                        data: Array(labels.length).fill(minWindNeeded),
+                        borderColor: '#f87171',
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        yAxisID: 'y'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#f8fafc', font: { size: 11 } } }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: { display: true, text: 'Wind in Knoten', color: '#94a3b8' },
+                        min: 0,
+                        max: 30,
+                        grid: { color: '#334155' },
+                        ticks: { color: '#94a3b8' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'Wasserstand (cm)', color: '#94a3b8' },
+                        min: 0,
+                        max: 20,
+                        grid: { drawOnChartArea: false },
+                        ticks: { color: '#94a3b8' }
+                    },
+                    x: {
+                        grid: { color: '#334155' },
+                        ticks: { color: '#94a3b8' }
+                    }
+                }
+            }
+        });
     }
 
     renderApp();
