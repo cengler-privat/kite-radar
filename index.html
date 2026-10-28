@@ -85,10 +85,8 @@
         </div>
     </header>
 
-    <div id="mainContainer"></div>
-
-    <!-- Großer Chart ganz unten -->
-    <div class="card">
+    <!-- Großer Chart jetzt OBERAN -->
+    <div class="card" id="chartCard">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <label style="font-size: 0.85rem; color: var(--primary);">Wind & Gezeiten Verlauf</label>
             <select id="chartDaySelect" onchange="updateChart()" style="width: auto; padding: 4px 8px; font-size: 0.8rem;"></select>
@@ -97,6 +95,9 @@
             <canvas id="weatherChart"></canvas>
         </div>
     </div>
+
+    <!-- Wind Cards / Tagesübersicht darunter -->
+    <div id="mainContainer"></div>
 
 <script>
     let userWeight = 72;
@@ -184,7 +185,7 @@
             html += `<div class="card day-section">
                 <div class="day-title">
                     <span>📅 ${day.dateStr}</span>
-                    <button class="chart-icon-btn" onclick="selectedDayIndex=${dIdx}; updateChart();" title="Im Chart anzeigen">📊</button>
+                    <button class="chart-icon-btn" onclick="scrollToChart(${dIdx})" title="Im Chart anzeigen">📊</button>
                 </div>
                 <div class="slots-grid">`;
             
@@ -202,6 +203,13 @@
         });
         container.innerHTML = html;
         updateChart();
+    }
+
+    function scrollToChart(dIdx) {
+        selectedDayIndex = dIdx;
+        updateChart();
+        // Sanft nach oben zum Chart springen
+        document.getElementById('chartCard').scrollIntoView({ behavior: 'smooth' });
     }
 
     function updateChart() {
