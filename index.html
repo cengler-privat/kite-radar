@@ -4,242 +4,168 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Royal Tulip Kite Beach - Wind & Tiden</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --primary: #0284c7;
-            --primary-dark: #0369a1;
-            --success: #10b981;
-            --success-light: #d1fae5;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text: #0f172a;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-        }
+        :root { --primary: #0284c7; --success: #10b981; --success-light: #d1fae5; --bg: #f8fafc; --card-bg: #ffffff; --text: #0f172a; --text-muted: #64748b; --border: #e2e8f0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 900px; margin: 0 auto; }
+        header { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; background: var(--card-bg); padding: 16px; border-radius: 12px; border: 1px solid var(--border); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        h1 { font-size: 1.25rem; }
+        .mode-toggles { display: flex; background: var(--bg); padding: 4px; border-radius: 8px; border: 1px solid var(--border); gap: 4px; }
+        .mode-btn { background: transparent; border: none; padding: 6px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border-radius: 6px; color: var(--text-muted); }
+        .mode-btn.active { background: var(--primary); color: white; }
+        .controls-grid { display: flex; flex-direction: column; gap: 4px; padding-top: 8px; border-top: 1px solid var(--border); }
+        label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+        .weight-input-wrapper { display: flex; align-items: center; gap: 8px; }
+        input[type="range"] { flex: 1; accent-color: var(--primary); }
+        .weight-number { width: 55px; padding: 4px; font-size: 0.9rem; font-weight: bold; text-align: center; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
+        .poweruser-panel { display: none; background: #f1f5f9; padding: 12px; border-radius: 8px; margin-top: 8px; border: 1px solid var(--border); }
+        .poweruser-panel.visible { display: block; }
+        select { padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: white; font-size: 0.9rem; width: 100%; }
+        .meta-info { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+        .card { background: var(--card-bg); border-radius: 12px; padding: 16px; border: 1px solid var(--border); margin-bottom: 16px; }
+        .day-section { margin-bottom: 16px; }
+        .day-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 8px; color: var(--primary); display: flex; justify-content: space-between; }
+        .slots-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .slot-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px; text-align: center; }
+        .slot-card.rideable { background: var(--success-light); border-color: #6ee7b7; }
+        .slot-time { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
+        .slot-wind { font-size: 1rem; font-weight: 800; margin-bottom: 2px; }
+        .slot-tide { font-size: 0.75rem; color: var(--text-muted); }
+        .slot-badge { font-size: 0.65rem; font-weight: 700; margin-top: 4px; padding: 2px 4px; border-radius: 4px; display: inline-block; }
+        .slot-card.rideable .slot-badge { background: var(--success); color: white; }
+        .slot-card:not(.rideable) .slot-badge { background: #e2e8f0; color: var(--text-muted); }
+        @media (max-width: 600px) { .slots-grid { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
+    <header>
+        <div class="header-top">
+            <h1>🪁 Royal Tulip Kite Beach</h1>
+            <div class="mode-toggles">
+                <button class="mode-btn active" id="btnStandard" onclick="setMode('standard')">Standard (WRF9)</button>
+                <button class="mode-btn" id="btnPoweruser" onclick="setMode('poweruser')">Modelle</button>
+            </div>
+        </div>
+        <div class="controls-grid">
+            <label>Kiter-Gewicht (mit Neo)</label>
+            <div class="weight-input-wrapper">
+                <input type="range" id="weightRange" min="50" max="110" value="75" oninput="updateWeight(this.value)">
+                <input type="number" id="weightNumber" class="weight-number" min="40" max="130" value="75" oninput="updateWeight(this.value)">
+                <span style="font-size: 0.85rem; font-weight: 600;">kg</span>
+            </div>
+        </div>
+        <div class="poweruser-panel" id="poweruserPanel">
+            <label>Wettermodell wählen</label>
+            <select id="modelSelect" onchange="renderApp()">
+                <option value="wrf9">WRF 9km (Thermik / Lokaler Standard)</option>
+                <option value="ecmwf">ECMWF 9km (Global)</option>
+                <option value="icon">ICON (DWD)</option>
+                <option value="gfs">GFS 13km (NOAA)</option>
+            </select>
+            <div class="meta-info" id="modelMeta">Lauf: 06Z | Update: vor 1.5h</div>
+        </div>
+    </header>
 
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            padding: 16px;
-            max-width: 900px;
-            margin: 0 auto;
-        }
+    <div id="mainContainer"></div>
 
-        header {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 20px;
-            background: var(--card-bg);
-            padding: 16px;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            border: 1px solid var(--border);
-        }
+<script>
+    let currentMode = 'standard';
+    let userWeight = 75;
+    
+    const daysData = [];
+    const today = new Date();
+    for (let i = 0; i < 7; i++) {
+        let d = new Date(today);
+        d.setDate(today.getDate() + i);
+        let dateString = d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
+        
+        let slots = [];
+        let hours = [9, 11, 13, 15];
+        hours.forEach((h, idx) => {
+            let baseWind = 11 + Math.sin(i + h) * 4 + (h === 13 ? 3 : 0);
+            let gusts = baseWind + 4;
+            let tideHeight = 0.4 + Math.sin(i * 2 + idx * 0.5) * 0.3;
+            let tideTrend = tideHeight > 0.4 ? "↑ Flut" : "↓ Ebbe";
+            
+            slots.push({
+                hour: `${h}:00`,
+                wrf9: { wind: Math.round(baseWind), gusts: Math.round(gusts) },
+                ecmwf: { wind: Math.max(8, Math.round(baseWind - 2)), gusts: Math.max(10, Math.round(gusts - 2)) },
+                icon: { wind: Math.max(9, Math.round(baseWind - 1)), gusts: Math.max(11, Math.round(gusts - 1)) },
+                gfs: { wind: Math.max(7, Math.round(baseWind - 3)), gusts: Math.max(9, Math.round(gusts - 3)) },
+                tide: tideHeight.toFixed(2) + "m",
+                tideTrend: tideTrend
+            });
+        });
+        daysData.push({ dateStr: dateString, slots: slots });
+    }
 
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
+    function setMode(mode) {
+        currentMode = mode;
+        document.getElementById('btnStandard').classList.toggle('active', mode === 'standard');
+        document.getElementById('btnPoweruser').classList.toggle('active', mode === 'poweruser');
+        document.getElementById('poweruserPanel').classList.toggle('visible', mode === 'poweruser');
+        if (mode === 'standard') document.getElementById('modelSelect').value = 'wrf9';
+        renderApp();
+    }
 
-        h1 {
-            font-size: 1.25rem;
-            color: var(--text);
-        }
+    function updateWeight(val) {
+        userWeight = Math.max(40, Math.min(130, Number(val)));
+        document.getElementById('weightRange').value = userWeight;
+        document.getElementById('weightNumber').value = userWeight;
+        renderApp();
+    }
 
-        .mode-toggles {
-            display: flex;
-            background: var(--bg);
-            padding: 4px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            gap: 4px;
-        }
+    function getMinWindFor14m() {
+        if (userWeight <= 60) return 10;
+        if (userWeight <= 75) return 11;
+        if (userWeight <= 90) return 13;
+        return 14;
+    }
 
-        .mode-btn {
-            background: transparent;
-            border: none;
-            padding: 6px 12px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            border-radius: 6px;
-            color: var(--text-muted);
-            transition: all 0.2s;
-        }
+    function getActiveModelKey() {
+        if (currentMode === 'standard') return 'wrf9';
+        return document.getElementById('modelSelect').value;
+    }
 
-        .mode-btn.active {
-            background: var(--primary);
-            color: white;
-        }
+    function renderApp() {
+        const container = document.getElementById('mainContainer');
+        const modelKey = getActiveModelKey();
+        const minWindNeeded = getMinWindFor14m();
+        
+        const metas = {
+            wrf9: "Lauf: 06Z | WRF 9km aktiv (Thermik-Korrektur)",
+            ecmwf: "Lauf: 00Z | ECMWF 9km Globalmodell",
+            icon: "Lauf: 06Z | ICON DWD Modell",
+            gfs: "Lauf: 00Z | GFS 13km NOAA Modell"
+        };
+        document.getElementById('modelMeta').innerText = metas[modelKey];
 
-        .controls-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-            padding-top: 8px;
-            border-top: 1px solid var(--border);
-        }
+        let html = '';
+        daysData.forEach((day) => {
+            html += `<div class="card day-section">
+                <div class="day-title"><span>📅 ${day.dateStr}</span></div>
+                <div class="slots-grid">`;
+            
+            day.slots.forEach(slot => {
+                let wData = slot[modelKey];
+                let isRideable = wData.wind >= minWindNeeded;
+                html += `<div class="slot-card ${isRideable ? 'rideable' : ''}">
+                    <div class="slot-time">${slot.hour}</div>
+                    <div class="slot-wind">${wData.wind} <span style="font-size:0.7rem;">kn</span></div>
+                    <div style="font-size:0.7rem; color:var(--text-muted)">Böen ${wData.gusts}</div>
+                    <div class="slot-tide">${slot.tide} ${slot.tideTrend}</div>
+                    <div class="slot-badge">${isRideable ? '✅ Fährt (≤14m²)' : '❌ Zu wenig'}</div>
+                </div>`;
+            });
+            html += `</div></div>`;
+        });
+        container.innerHTML = html;
+    }
 
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        label {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .weight-input-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        input[type="range"] {
-            flex: 1;
-            accent-color: var(--primary);
-        }
-
-        .weight-number {
-            width: 55px;
-            padding: 4px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            text-align: center;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            background: var(--bg);
-        }
-
-        .poweruser-panel {
-            display: none;
-            background: #f1f5f9;
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 8px;
-            border: 1px solid var(--border);
-        }
-
-        .poweruser-panel.visible {
-            display: block;
-        }
-
-        select {
-            padding: 6px;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            background: white;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        .meta-info {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-
-        .view-switcher {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-
-        .view-btn {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid var(--border);
-            background: white;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .view-btn.active {
-            background: var(--text);
-            color: white;
-            border-color: var(--text);
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            border: 1px solid var(--border);
-            margin-bottom: 16px;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 220px;
-            width: 100%;
-        }
-
-        .day-section {
-            margin-bottom: 16px;
-        }
-
-        .day-title {
-            font-size: 0.95rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: var(--primary-dark);
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .slots-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-        }
-
-        .slot-card {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 8px;
-            text-align: center;
-            transition: all 0.2s;
-        }
-
-        .slot-card.rideable {
-            background: var(--success-light);
-            border-color: #6ee7b7;
-        }
-
-        .slot-time {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            margin-bottom: 4px;
-        }
-
-        .slot-wind {
-            font-size: 1rem;
-            font-weight: 800;
-            margin-bottom: 2px;
-        }
-
-        .slot-tide {
-          
+    renderApp();
+</script>
+</body>
+</html>
