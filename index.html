@@ -23,21 +23,26 @@
         header { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; background: var(--card-bg); padding: 16px; border-radius: 12px; border: 1px solid var(--border); }
         .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         h1 { font-size: 1.25rem; color: var(--text); }
-        .mode-toggles { display: flex; background: var(--bg); padding: 4px; border-radius: 8px; border: 1px solid var(--border); gap: 4px; }
-        .mode-btn { background: transparent; border: none; padding: 6px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border-radius: 6px; color: var(--text-muted); }
-        .mode-btn.active { background: var(--primary); color: #0f172a; }
-        .controls-grid { display: flex; flex-direction: column; gap: 4px; padding-top: 8px; border-top: 1px solid var(--border); }
+        .settings-btn { background: var(--bg); border: 1px solid var(--border); padding: 6px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border-radius: 6px; color: var(--text-muted); }
+        .settings-btn.active { background: var(--primary); color: #0f172a; border-color: var(--primary); }
+        
+        .settings-panel { display: none; background: #0f172a; padding: 14px; border-radius: 8px; margin-top: 4px; border: 1px solid var(--border); gap: 12px; flex-direction: column; }
+        .settings-panel.visible { display: flex; }
+        
+        .control-group { display: flex; flex-direction: column; gap: 4px; }
         label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
         .weight-input-wrapper { display: flex; align-items: center; gap: 8px; }
         input[type="range"] { flex: 1; accent-color: var(--primary); }
         .weight-number { width: 55px; padding: 4px; font-size: 0.9rem; font-weight: bold; text-align: center; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); }
-        .poweruser-panel { display: none; background: #0f172a; padding: 12px; border-radius: 8px; margin-top: 8px; border: 1px solid var(--border); }
-        .poweruser-panel.visible { display: block; }
-        select { padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); font-size: 0.9rem; width: 100%; }
-        .meta-info { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+        select { padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); font-size: 0.9rem; width: 100%; }
+        .meta-info { font-size: 0.75rem; color: var(--primary); margin-top: 4px; line-height: 1.3; }
+
         .card { background: var(--card-bg); border-radius: 12px; padding: 16px; border: 1px solid var(--border); margin-bottom: 16px; }
         .day-section { margin-bottom: 16px; }
-        .day-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 8px; color: var(--primary); display: flex; justify-content: space-between; }
+        .day-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 8px; color: var(--primary); display: flex; justify-content: space-between; align-items: center; }
+        .chart-icon-btn { background: transparent; border: none; font-size: 1.1rem; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+        .chart-icon-btn:hover { background: rgba(56, 189, 248, 0.1); }
+
         .slots-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
         .slot-card { background: var(--normal-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; transition: all 0.2s; }
         .slot-card.rideable { background: var(--success-bg); border-color: var(--success-border); }
@@ -53,28 +58,30 @@
     <header>
         <div class="header-top">
             <h1>🪁 Royal Tulip Kite Beach</h1>
-            <div class="mode-toggles">
-                <button class="mode-btn active" id="btnStandard" onclick="setMode('standard')">Standard (WRF9)</button>
-                <button class="mode-btn" id="btnPoweruser" onclick="setMode('poweruser')">Modelle</button>
-            </div>
+            <button class="settings-btn" id="btnSettings" onclick="toggleSettings()">⚙️ Settings</button>
         </div>
-        <div class="controls-grid">
-            <label>Kiter-Gewicht (mit Neo)</label>
-            <div class="weight-input-wrapper">
-                <input type="range" id="weightRange" min="50" max="110" value="72" oninput="updateWeight(this.value)">
-                <input type="number" id="weightNumber" class="weight-number" min="40" max="130" value="72" oninput="updateWeight(this.value)">
-                <span style="font-size: 0.85rem; font-weight: 600;">kg</span>
+
+        <!-- Settings Panel (Modelle & Gewicht) -->
+        <div class="settings-panel" id="settingsPanel">
+            <div class="control-group">
+                <label>Wettermodell wählen</label>
+                <select id="modelSelect" onchange="renderApp()">
+                    <option value="wrf9">WRF 9km (Thermik / Lokaler Standard)</option>
+                    <option value="ecmwf">ECMWF 9km (Global)</option>
+                    <option value="icon">ICON (DWD)</option>
+                    <option value="gfs">GFS 13km (NOAA)</option>
+                </select>
+                <div class="meta-info" id="modelMeta">Letztes Update: Heute, 06:00 Uhr | Nächstes Update: ca. 12:30 Uhr</div>
             </div>
-        </div>
-        <div class="poweruser-panel" id="poweruserPanel">
-            <label>Wettermodell wählen</label>
-            <select id="modelSelect" onchange="renderApp()">
-                <option value="wrf9">WRF 9km (Thermik / Lokaler Standard)</option>
-                <option value="ecmwf">ECMWF 9km (Global)</option>
-                <option value="icon">ICON (DWD)</option>
-                <option value="gfs">GFS 13km (NOAA)</option>
-            </select>
-            <div class="meta-info" id="modelMeta">Lauf: 06Z | WRF 9km aktiv</div>
+
+            <div class="control-group" style="margin-top: 4px;">
+                <label>Kiter-Gewicht (mit Neo)</label>
+                <div class="weight-input-wrapper">
+                    <input type="range" id="weightRange" min="50" max="110" value="72" oninput="updateWeight(this.value)">
+                    <input type="number" id="weightNumber" class="weight-number" min="40" max="130" value="72" oninput="updateWeight(this.value)">
+                    <span style="font-size: 0.85rem; font-weight: 600;">kg</span>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -92,7 +99,6 @@
     </div>
 
 <script>
-    let currentMode = 'standard';
     let userWeight = 72;
     let selectedDayIndex = 0;
     let myChart = null;
@@ -125,13 +131,11 @@
         daysData.push({ dateStr: dateString, slots: slots });
     }
 
-    function setMode(mode) {
-        currentMode = mode;
-        document.getElementById('btnStandard').classList.toggle('active', mode === 'standard');
-        document.getElementById('btnPoweruser').classList.toggle('active', mode === 'poweruser');
-        document.getElementById('poweruserPanel').classList.toggle('visible', mode === 'poweruser');
-        if (mode === 'standard') document.getElementById('modelSelect').value = 'wrf9';
-        renderApp();
+    function toggleSettings() {
+        const panel = document.getElementById('settingsPanel');
+        const btn = document.getElementById('btnSettings');
+        panel.classList.toggle('visible');
+        btn.classList.toggle('active');
     }
 
     function updateWeight(val) {
@@ -149,7 +153,6 @@
     }
 
     function getActiveModelKey() {
-        if (currentMode === 'standard') return 'wrf9';
         return document.getElementById('modelSelect').value;
     }
 
@@ -159,16 +162,14 @@
         const minWindNeeded = getMinWindFor14m();
         
         const metas = {
-            wrf9: "Lauf: 06Z | WRF 9km aktiv (Thermik)",
-            ecmwf: "Lauf: 00Z | ECMWF 9km Global",
-            icon: "Lauf: 06Z | ICON DWD Modell",
-            gfs: "Lauf: 00Z | GFS 13km NOAA"
+            wrf9: "Letztes Update: Heute, 06:00 Uhr | Nächstes Update: ca. 12:30 Uhr",
+            ecmwf: "Letztes Update: Heute, 00:00 Uhr | Nächstes Update: ca. 12:00 Uhr",
+            icon: "Letztes Update: Vor 45 Min. | Nächstes Update: ca. 11:15 Uhr",
+            gfs: "Letztes Update: Heute, 00:00 Uhr | Nächstes Update: ca. 13:45 Uhr"
         };
         document.getElementById('modelMeta').innerText = metas[modelKey];
 
-        // Chart Tagesauswahl aktualisieren
         const chartSelect = document.getElementById('chartDaySelect');
-        const prevSelected = chartSelect.value;
         chartSelect.innerHTML = '';
         daysData.forEach((day, idx) => {
             let opt = document.createElement('option');
@@ -183,7 +184,7 @@
             html += `<div class="card day-section">
                 <div class="day-title">
                     <span>📅 ${day.dateStr}</span>
-                    <span style="font-size:0.75rem; color:var(--text-muted); cursor:pointer;" onclick="selectedDayIndex=${dIdx}; updateChart();">Im Chart anzeigen 📊</span>
+                    <button class="chart-icon-btn" onclick="selectedDayIndex=${dIdx}; updateChart();" title="Im Chart anzeigen">📊</button>
                 </div>
                 <div class="slots-grid">`;
             
